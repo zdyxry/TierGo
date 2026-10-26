@@ -1,0 +1,187 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  draft-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the tag against mygo.json
+        if: github.event_name == 'push'
+        run: test "$GITHUB_REF_NAME" = "v$(jq -r .version mygo.json)"
+      - name: Replace the draft release
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="v$(jq -r .version mygo.json)"
+          draft="$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2>/dev/null || true)"
+          if [[ "$draft" == "false" ]]; then
+            echo "::error::$tag is already published; bump mygo.json"
+            exit 1
+          fi
+          if [[ "$draft" == "true" ]]; then
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+            git push origin ":refs/tags/$tag"
+          fi
+          git tag "$tag" "$GITHUB_SHA"
+          git push origin "refs/tags/$tag"
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v$(jq -r .version mygo.json)"
+          if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
+              --draft --verify-tag --title "$tag" --generate-notes
+          fi
+
+  test:
+    needs: draft-release
+    uses: ./.github/workflows/test.yml
+
+  build:
+    needs: [draft-release, test]
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Linux, os: ubuntu-latest, platform: "linux/amd64,linux/arm64", assets: linux }
+          - { name: macOS, os: macos-latest, platform: "darwin/universal", assets: macos }
+          - { name: Windows, os: ubuntu-latest, platform: "windows/amd64,windows/arm64", assets: windows }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Install NSIS for Windows installers
+        if: matrix.name == 'Windows'
+        run: sudo apt-get update && sudo apt-get install -y nsis
+      - name: Import macOS signing and notary credentials
+        if: matrix.name == 'macOS'
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for required in MACOS_CERTIFICATE MACOS_CERTIFICATE_PASSWORD MACOS_SIGNING_IDENTITY APPLE_ID APPLE_TEAM_ID APPLE_APP_PASSWORD; do
+            if [[ -z "${!required}" ]]; then
+              echo "::error::$required is required for a formal macOS release; ad-hoc builds are CI-only"
+              exit 1
+            fi
+          done
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password="$(openssl rand -base64 24)"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          printf '%s' "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/certificate.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$password" "$keychain"
+          security list-keychains -d user -s "$keychain" login.keychain
+          xcrun notarytool store-credentials NOTARY --keychain "$keychain" \
+            --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD"
+          jq --arg identity "$MACOS_SIGNING_IDENTITY" --arg keychain "$keychain" \
+            '.macos.signingIdentity = $identity | .macos.notarize = {keychainProfile: "NOTARY", keychain: $keychain}' \
+            mygo.json > "$RUNNER_TEMP/mygo.json"
+          mv "$RUNNER_TEMP/mygo.json" mygo.json
+      - name: Fetch locked cores
+        run: |
+          IFS=, read -ra platforms <<< "${{ matrix.platform }}"
+          for platform in "${platforms[@]}"; do
+            go run ./cmd/fetch-core -platform "$platform"
+          done
+      - name: Build packages
+        run: go tool mygo build -platform "${{ matrix.platform }}"
+      - name: Check Linux install and uninstall
+        if: matrix.name == 'Linux'
+        run: scripts/check-linux-install.sh
+      - name: Stage release assets
+        run: |
+          set -euo pipefail
+          assets="release-assets/${{ matrix.assets }}"
+          mkdir -p "$assets"
+          case "${{ matrix.assets }}" in
+            linux)
+              cp build/linux-*/*.tar.gz build/linux-*/*.deb "$assets/"
+              cp build/linux-amd64/install.sh "$assets/install.sh"
+              ;;
+            windows)
+              cp build/windows-*/*.exe "$assets/"
+              ;;
+            macos)
+              app_name="$(jq -r .name mygo.json)"
+              version="$(jq -r .version mygo.json)"
+              ditto -c -k --keepParent "build/darwin-universal/$app_name.app" \
+                "$assets/$app_name-$version-macos-universal.zip"
+              find build/darwin-universal -maxdepth 1 -name '*.dmg' -exec cp {} "$assets/" \;
+              ;;
+          esac
+          python3 - "$assets" <<'PY'
+          import hashlib
+          import pathlib
+          import sys
+
+          directory = pathlib.Path(sys.argv[1])
+          lines = []
+          for artifact in sorted(directory.iterdir()):
+              if artifact.is_file() and not artifact.name.startswith("SHA256SUMS-"):
+                  lines.append(f"{hashlib.sha256(artifact.read_bytes()).hexdigest()}  {artifact.name}")
+          (directory / f"SHA256SUMS-{directory.name}").write_text("\n".join(lines) + "\n")
+          PY
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v$(jq -r .version mygo.json)"
+          gh release upload "$tag" --repo "$GITHUB_REPOSITORY" --clobber release-assets/${{ matrix.assets }}/*
+
+  assets:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check release completeness
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="v$(jq -r .version mygo.json)"
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' > assets.txt
+          for required in linux-amd64 linux-arm64 macos-universal windows-amd64 windows-arm64 SHA256SUMS; do
+            grep -F "$required" assets.txt >/dev/null || {
+              echo "::error::$tag has no asset matching $required"
+              exit 1
+            }
+          done
+          grep -E '\.dmg$' assets.txt >/dev/null
+          test "$(grep -c 'macos-universal.*\.zip$' assets.txt)" -ge 1
+      - name: Publish a unified checksum manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="v$(jq -r .version mygo.json)"
+          mkdir -p release-checksums
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" \
+            --pattern 'SHA256SUMS-*' --dir release-checksums --clobber
+          sort -u release-checksums/SHA256SUMS-* > SHA256SUMS
+          gh release upload "$tag" --repo "$GITHUB_REPOSITORY" --clobber SHA256SUMS

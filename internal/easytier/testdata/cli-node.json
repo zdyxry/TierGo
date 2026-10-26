@@ -1,0 +1,74 @@
+{
+  "peer_id": 3438555542,
+  "ipv4_addr": "10.244.55.2/24",
+  "proxy_cidrs": [],
+  "hostname": "mygo-b",
+  "stun_info": {
+    "udp_nat_type": 6,
+    "tcp_nat_type": 6,
+    "last_update_time": 1792045896,
+    "public_ip": [
+      "191.222.212.172",
+      "61.173.162.201"
+    ],
+    "min_port": 25808,
+    "max_port": 33583
+  },
+  "inst_id": "5b51643f-c8e3-4dd1-aeaa-f65fa79f90c0",
+  "listeners": [
+    "ring://5b51643f-c8e3-4dd1-aeaa-f65fa79f90c0",
+    "tcp://0.0.0.0:11102",
+    "tcp://[::]:11102",
+    "udp://0.0.0.0:11102",
+    "udp://[::]:11102"
+  ],
+  "config": "hostname = \"mygo-b\"\ninstance_name = \"mygo-b\"\ninstance_id = \"5b51643f-c8e3-4dd1-aeaa-f65fa79f90c0\"\nipv4 = \"10.244.55.2/24\"\nlisteners = [\n    \"tcp://0.0.0.0:11102\",\n    \"udp://0.0.0.0:11102\",\n]\n\n[network_identity]\nnetwork_name = \"mygo-probe\"\nnetwork_secret = \"probe-secret\"\n\n[[peer]]\nuri = \"tcp://192.168.8.97:11101\"\n\n[flags]\nno_tun = true\n",
+  "version": "2.6.4-8428a89d",
+  "feature_flag": {
+    "is_public_server": false,
+    "avoid_relay_data": false,
+    "kcp_input": true,
+    "no_relay_kcp": false,
+    "support_conn_list_sync": true,
+    "quic_input": true,
+    "no_relay_quic": false,
+    "is_credential_peer": false,
+    "need_p2p": false,
+    "disable_p2p": false,
+    "ipv6_public_addr_provider": false
+  },
+  "ip_list": {
+    "public_ipv4": {
+      "addr": 1034789577
+    },
+    "interface_ipv4s": [
+      {
+        "addr": 3232237665
+      },
+      {
+        "addr": 171966465
+      },
+      {
+        "addr": 171967233
+      },
+      {
+        "addr": 171967745
+      },
+      {
+        "addr": 171968001
+      }
+    ],
+    "public_ipv6": null,
+    "interface_ipv6s": [
+      {
+        "part1": 4252635484,
+        "part2": 2715811840,
+        "part3": 0,
+        "part4": 3187748872
+      }
+    ],
+    "listeners": []
+  },
+  "public_ipv6_addr": null,
+  "ipv6_public_addr_prefix": null
+}

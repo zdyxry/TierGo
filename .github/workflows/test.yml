@@ -1,0 +1,52 @@
+name: Test
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Fetch locked test cores
+        run: |
+          go run ./cmd/fetch-core -platform linux/amd64
+          source scripts/fetch-integration-binaries.sh
+          printf 'EASYTIER_WEB=%s\nEASYTIER_NEXT_CORE=%s\nEASYTIER_NEXT_CLI=%s\n' \
+            "$EASYTIER_WEB" "$EASYTIER_NEXT_CORE" "$EASYTIER_NEXT_CLI" >> "$GITHUB_ENV"
+      - name: Check formatting and scripts
+        run: |
+          test -z "$(git ls-files '*.go' | xargs gofmt -l)"
+          bash -n scripts/*.sh
+          shellcheck scripts/*.sh
+      - name: Vet
+        run: |
+          go vet ./...
+          go tool mygo vet .
+      - name: Test all packages and integrations
+        env:
+          EASYTIER_WEB: ${{ env.EASYTIER_WEB }}
+          EASYTIER_NEXT_CORE: ${{ env.EASYTIER_NEXT_CORE }}
+          EASYTIER_NEXT_CLI: ${{ env.EASYTIER_NEXT_CLI }}
+        run: go test -count=1 ./...
+      - name: Require real Core integrations without skips
+        run: |
+          set -o pipefail
+          go test -count=1 -run TestE2E -v ./internal/easytier | tee build/e2e.log
+          if grep -- '--- SKIP' build/e2e.log; then
+            echo 'real Core integration was skipped'
+            exit 1
+          fi
+          go test -count=1 -run 'Test(Ensure|Embedded)' -v ./internal/corebin | tee build/corebin.log
+          if grep -- '--- SKIP' build/corebin.log; then
+            echo 'embedded Core integration was skipped'
+            exit 1
+          fi
+      - name: Race
+        run: go test -race -count=1 ./internal/app ./internal/easytier ./internal/locale

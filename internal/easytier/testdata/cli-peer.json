@@ -1,0 +1,30 @@
+[
+  {
+    "cidr": "10.244.55.2/24",
+    "ipv4": "10.244.55.2",
+    "hostname": "mygo-b",
+    "cost": "Local",
+    "lat_ms": "-",
+    "loss_rate": "-",
+    "rx_bytes": "-",
+    "tx_bytes": "-",
+    "tunnel_proto": "-",
+    "nat_type": "Symmetric",
+    "id": "3438555542",
+    "version": "2.6.4-8428a89d"
+  },
+  {
+    "cidr": "10.244.55.1/24",
+    "ipv4": "10.244.55.1",
+    "hostname": "mygo-a",
+    "cost": "p2p",
+    "lat_ms": "0.11",
+    "loss_rate": "0.0%",
+    "rx_bytes": "2.69 kB",
+    "tx_bytes": "3.01 kB",
+    "tunnel_proto": "tcp",
+    "nat_type": "Symmetric",
+    "id": "2678875625",
+    "version": "2.6.4-8428a89d"
+  }
+]

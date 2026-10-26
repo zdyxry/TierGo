@@ -1,0 +1,10 @@
+build/
+dist/
+*.test
+easytier-mygo
+easytier-mygo.exe
+# 内核二进制由 cmd/fetch-core 生成，不进版本控制；每平台的 PLACEHOLDER.md 要保留，
+# 否则没有资源的机器上 go:embed 会直接编译失败。
+internal/corebin/assets/*/*.gz
+internal/corebin/assets/*/provenance.json
+*.zip

@@ -1,0 +1,32 @@
+[
+  {
+    "ipv4": "10.244.55.2/24",
+    "hostname": "mygo-b",
+    "proxy_cidrs": "",
+    "next_hop_ipv4": "-",
+    "next_hop_hostname": "Local",
+    "next_hop_lat": 0.0,
+    "path_len": 0,
+    "path_latency": 0,
+    "next_hop_ipv4_lat_first": "-",
+    "next_hop_hostname_lat_first": "Local",
+    "path_len_lat_first": 0,
+    "path_latency_lat_first": 0,
+    "version": "2.6.4-8428a89d"
+  },
+  {
+    "ipv4": "10.244.55.1/24",
+    "hostname": "mygo-a",
+    "proxy_cidrs": "",
+    "next_hop_ipv4": "DIRECT",
+    "next_hop_hostname": "DIRECT",
+    "next_hop_lat": 0.108,
+    "path_len": 1,
+    "path_latency": 1,
+    "next_hop_ipv4_lat_first": "DIRECT",
+    "next_hop_hostname_lat_first": "DIRECT",
+    "path_len_lat_first": 1,
+    "path_latency_lat_first": 1,
+    "version": "2.6.4-8428a89d"
+  }
+]
