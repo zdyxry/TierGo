@@ -103,7 +103,12 @@ jobs:
               cp build/linux-amd64/install.sh "$assets/install.sh"
               ;;
             windows)
-              cp build/windows-*/*.exe "$assets/"
+              app_name="$(jq -r .name mygo.json)"
+              version="$(jq -r .version mygo.json)"
+              for arch in amd64 arm64; do
+                cp "build/windows-$arch/$app_name Setup $version $arch.exe" \
+                  "$assets/$app_name-$version-windows-$arch-setup.exe"
+              done
               ;;
             macos)
               app_name="$(jq -r .name mygo.json)"
