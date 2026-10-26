@@ -29,10 +29,12 @@ next_sha256="$(jq -r .testFixtures.nextCore.sha256 core-lock.json)"
 fetch_locked "$stable_version" "$stable_asset" "$stable_sha256"
 fetch_locked "$next_version" "$next_asset" "$next_sha256"
 
-unzip -j -o "build/test-bin/$stable_asset" '*/easytier-web' -d build/test-bin/v2.6.4 >/dev/null
+unzip -j -o "build/test-bin/$stable_asset" '*/easytier-core' '*/easytier-cli' '*/easytier-web' -d build/test-bin/v2.6.4 >/dev/null
 unzip -j -o "build/test-bin/$next_asset" '*/easytier-core' '*/easytier-cli' -d build/test-bin/main >/dev/null
-chmod +x build/test-bin/v2.6.4/easytier-web build/test-bin/main/easytier-core build/test-bin/main/easytier-cli
+chmod +x build/test-bin/v2.6.4/easytier-* build/test-bin/main/easytier-*
 
+export EASYTIER_CORE="$root/build/test-bin/v2.6.4/easytier-core"
+export EASYTIER_CLI="$root/build/test-bin/v2.6.4/easytier-cli"
 export EASYTIER_WEB="$root/build/test-bin/v2.6.4/easytier-web"
 export EASYTIER_NEXT_CORE="$root/build/test-bin/main/easytier-core"
 export EASYTIER_NEXT_CLI="$root/build/test-bin/main/easytier-cli"

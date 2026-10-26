@@ -105,7 +105,11 @@ jobs:
           mv "$RUNNER_TEMP/mygo.json" mygo.json
       - name: Fetch locked cores
         run: |
-          IFS=, read -ra platforms <<< "${{ matrix.platform }}"
+          platforms="${{ matrix.platform }}"
+          if [[ "$platforms" == "darwin/universal" ]]; then
+            platforms="darwin/amd64,darwin/arm64"
+          fi
+          IFS=, read -ra platforms <<< "$platforms"
           for platform in "${platforms[@]}"; do
             go run ./cmd/fetch-core -platform "$platform"
           done

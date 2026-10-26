@@ -18,8 +18,8 @@ jobs:
         run: |
           go run ./cmd/fetch-core -platform linux/amd64
           source scripts/fetch-integration-binaries.sh
-          printf 'EASYTIER_WEB=%s\nEASYTIER_NEXT_CORE=%s\nEASYTIER_NEXT_CLI=%s\n' \
-            "$EASYTIER_WEB" "$EASYTIER_NEXT_CORE" "$EASYTIER_NEXT_CLI" >> "$GITHUB_ENV"
+          printf 'EASYTIER_CORE=%s\nEASYTIER_CLI=%s\nEASYTIER_WEB=%s\nEASYTIER_NEXT_CORE=%s\nEASYTIER_NEXT_CLI=%s\n' \
+            "$EASYTIER_CORE" "$EASYTIER_CLI" "$EASYTIER_WEB" "$EASYTIER_NEXT_CORE" "$EASYTIER_NEXT_CLI" >> "$GITHUB_ENV"
       - name: Check formatting and scripts
         run: |
           test -z "$(git ls-files '*.go' | xargs gofmt -l)"
