@@ -44,6 +44,11 @@ jobs:
           if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
               --draft --verify-tag --title "$tag" --generate-notes
+            {
+              gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json body --jq .body
+              printf '\n\n**Test builds: macOS uses ad-hoc signing and is not notarized by Apple. Windows installers are not Authenticode-signed.**\n'
+            } > "$RUNNER_TEMP/release-notes.md"
+            gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --notes-file "$RUNNER_TEMP/release-notes.md"
           fi
 
   test:
@@ -69,40 +74,9 @@ jobs:
       - name: Install NSIS for Windows installers
         if: matrix.name == 'Windows'
         run: sudo apt-get update && sudo apt-get install -y nsis
-      - name: Import macOS signing and notary credentials
+      - name: Confirm unsigned macOS test build
         if: matrix.name == 'macOS'
-        env:
-          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-        run: |
-          set -euo pipefail
-          for required in MACOS_CERTIFICATE MACOS_CERTIFICATE_PASSWORD MACOS_SIGNING_IDENTITY APPLE_ID APPLE_TEAM_ID APPLE_APP_PASSWORD; do
-            if [[ -z "${!required}" ]]; then
-              echo "::error::$required is required for a formal macOS release; ad-hoc builds are CI-only"
-              exit 1
-            fi
-          done
-          keychain="$RUNNER_TEMP/signing.keychain-db"
-          password="$(openssl rand -base64 24)"
-          security create-keychain -p "$password" "$keychain"
-          security set-keychain-settings -lut 21600 "$keychain"
-          security unlock-keychain -p "$password" "$keychain"
-          printf '%s' "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
-          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" \
-            -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          rm "$RUNNER_TEMP/certificate.p12"
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$password" "$keychain"
-          security list-keychains -d user -s "$keychain" login.keychain
-          xcrun notarytool store-credentials NOTARY --keychain "$keychain" \
-            --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD"
-          jq --arg identity "$MACOS_SIGNING_IDENTITY" --arg keychain "$keychain" \
-            '.macos.signingIdentity = $identity | .macos.notarize = {keychainProfile: "NOTARY", keychain: $keychain}' \
-            mygo.json > "$RUNNER_TEMP/mygo.json"
-          mv "$RUNNER_TEMP/mygo.json" mygo.json
+        run: echo 'Using ad-hoc signing; Apple notarization is disabled for this test release.'
       - name: Fetch locked cores
         run: |
           platforms="${{ matrix.platform }}"

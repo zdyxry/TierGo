@@ -19,6 +19,8 @@ TierGo 是一个**非官方** [EasyTier](https://github.com/EasyTier/EasyTier) �
 
 从 [Releases](https://github.com/zdyxry/TierGo/releases) 下载对应平台的安装包。发布版已内嵌 Core，无需单独安装 EasyTier。
 
+当前为测试发布：macOS 使用 ad-hoc 签名且未经 Apple 公证，Windows 安装包未做 Authenticode 签名，系统可能显示安全提示。
+
 创建虚拟网卡需要管理员权限。Windows 的 Npcap 不随应用分发，需要相关功能时请从 <https://npcap.com> 自行安装。
 
 ## 从源码构建
