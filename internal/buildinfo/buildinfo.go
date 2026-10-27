@@ -2,7 +2,7 @@ package buildinfo
 
 import "runtime/debug"
 
-const Version = "0.1.0"
+const Version = "0.1.1"
 
 func Commit() string {
 	if info, ok := debug.ReadBuildInfo(); ok {
