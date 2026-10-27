@@ -1,19 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
-    <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5c7bfc"/>
-      <stop offset="1" stop-color="#3450d8"/>
+    <linearGradient id="background" x1="180" y1="96" x2="824" y2="928" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#314ba6"/>
+      <stop offset="0.48" stop-color="#222f6b"/>
+      <stop offset="1" stop-color="#11162e"/>
     </linearGradient>
+    <radialGradient id="cyan-glow" cx="0" cy="0" r="1" gradientTransform="translate(790 190) rotate(132) scale(650)">
+      <stop stop-color="#22d3ee" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="violet-glow" cx="0" cy="0" r="1" gradientTransform="translate(220 850) rotate(-42) scale(620)">
+      <stop stop-color="#8b5cf6" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mark" x1="512" y1="300" x2="512" y2="748" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dbe7ff"/>
+    </linearGradient>
+    <filter id="shadow" x="200" y="250" width="624" height="560" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#050818" flood-opacity="0.38"/>
+    </filter>
   </defs>
   <rect x="32" y="32" width="960" height="960" rx="224" fill="url(#background)"/>
-  <g fill="none" stroke="#fff" stroke-width="58" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
-    <path d="M336 336 512 512 688 336M512 512v208"/>
+  <rect x="32" y="32" width="960" height="960" rx="224" fill="url(#cyan-glow)"/>
+  <rect x="32" y="32" width="960" height="960" rx="224" fill="url(#violet-glow)"/>
+  <rect x="34" y="34" width="956" height="956" rx="222" fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="4"/>
+  <g fill="none" stroke="url(#mark)" stroke-width="112" stroke-linecap="round" filter="url(#shadow)">
+    <path d="M320 356H704M512 356V692"/>
   </g>
-  <g fill="#fff">
-    <circle cx="336" cy="336" r="86"/>
-    <circle cx="688" cy="336" r="86"/>
-    <circle cx="512" cy="512" r="96"/>
-    <circle cx="512" cy="736" r="86"/>
-  </g>
-  <circle cx="512" cy="512" r="34" fill="#4b6bfb"/>
+  <circle cx="320" cy="356" r="26" fill="#67e8f9"/>
+  <circle cx="704" cy="356" r="26" fill="#67e8f9"/>
+  <circle cx="512" cy="692" r="26" fill="#a5b4fc"/>
+  <circle cx="512" cy="356" r="31" fill="#31447f"/>
+  <circle cx="512" cy="356" r="12" fill="#ffffff"/>
 </svg>

@@ -1,7 +1,7 @@
 {
   "name": "TierGo",
   "identifier": "io.github.zdyxry.tiergo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "out": "build",
   "icon": "resources/icon.png",
   "resources": ["LICENSE", "SECURITY.md", "THIRD_PARTY_NOTICES.md", "third_party"]
